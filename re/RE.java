@@ -4,8 +4,9 @@ import fa.nfa.NFA;
 
 public class RE implements REInterface {
 
-	private static Blank blank;
+	private static NFA blank;
 	private String regEx;
+	private NFA nfa;
 
 	public RE(String regEx) {
 		this.regEx = regEx;
@@ -14,8 +15,7 @@ public class RE implements REInterface {
 	//will do parse
 	@Override
 	public NFA getNFA() {
-		// TODO Auto-generated method stub
-		return null;
+		return nfa;
 	}
 
 	/* TODO Decent parser!!!
@@ -27,15 +27,15 @@ public class RE implements REInterface {
 	 * 
 	 * @return - term/regular expression
 	 */
-	private RE re() {
-		RE term = term();
+	private NFA re() {
+		NFA termNFA = term();
 
 		if (more() && peek() == '|') {
 			eat('|');
-			RE regex = re();
-			return new Choice(term, regex);
+			NFA regex = re();
+			return new Choice(termNFA, regex);
 		} else {
-			return term;
+			return termNFA;
 		}
 	}
 
@@ -44,15 +44,15 @@ public class RE implements REInterface {
 	 * 
 	 * @return - term/factor
 	 */
-	private RE term() {
-		RE term = RE.blank;
+	private NFA term() {
+		NFA termNFA = RE.blank;
 
 		while (more() && peek() != ')' && peek() != '|') {
-			RE nextFactor = factor();
-			term = new Sequence(term, nextFactor);
+			NFA nextFactor = factor();
+//			term = new Sequence(term, nextFactor);
 		}
 
-		return term;
+		return termNFA;
 	}
 
 	/**
@@ -60,26 +60,26 @@ public class RE implements REInterface {
 	 * 
 	 * @return
 	 */
-	private RE factor() {
-		RE base = base();
+	private NFA factor() {
+		NFA baseNFA = base();
 
 		while (more() && peek() == '*') {
 			eat('*');
-			base = new Repetition(base);
+//			base = new Repetition(base);
 		}
 
-		return base;
+		return baseNFA;
 	}
 
 	/**
 	 * returns a base
 	 * @return - base 
 	 */
-	private RE base() {
+	private NFA base() {
 		switch (peek()) {
 		case '(':
 			eat('(');
-			RE r = re();
+			NFA r = re();
 			eat(')');
 			return r;
 
@@ -128,83 +128,5 @@ public class RE implements REInterface {
 	 */
 	private boolean more() {
 		return regEx.length() > 0;
-	}
-
-
-	/**
-	 * private inner class.
-	 * there is a choice indicated by |
-	 * 
-	 * @author annebrinegar, Megan Pierce
-	 *
-	 */
-	private class Choice extends RE {
-		private RE thisOne;
-		private RE thatOne;
-
-		public Choice(RE thisOne, RE thatOne) {
-			super(regEx);
-			this.thisOne = thisOne;
-			this.thatOne = thatOne;
-		}
-	}
-
-	/**
-	 * private inner class.
-	 * Sequence of characters
-	 * 
-	 * @author annebrinegar, Megan Pierce
-	 *
-	 */
-	private class Sequence extends RE {
-		private RE first;
-		private RE second;
-
-		public Sequence(RE first, RE second) {
-			super(regEx);
-			this.first = first;
-			this.second = second;
-		}
-	}
-
-	/**
-	 * empty character representation
-	 * 
-	 * @author annebrinegar, Megan Pierce
-	 *
-	 */
-	private class Blank extends RE {
-
-		public Blank(String regEx) {
-			super(regEx);
-		}
-	}
-
-	/**
-	 * indicates star?
-	 * 
-	 * @author annebrinegar, Megan Pierce
-	 *
-	 */
-	private class Repetition extends RE {
-		private RE internal;
-
-		public Repetition(RE internal) {
-			super(regEx);
-			this.internal = internal;
-		}
-	}
-
-	/**
-	 * bare bones, individual char.
-	 * @author annebrinegar, Megan Pierce
-	 *
-	 */
-	private class Primitive extends RE {
-		private char c;
-		public Primitive(char c) {
-			super(regEx);
-			this.c = c;
-		}
 	}
 }
