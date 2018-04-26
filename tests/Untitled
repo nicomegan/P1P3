@@ -1,7 +1,10 @@
-a|b|ab
-a
+(a|b)*a
 a
 abbbbbbb
 baaaaaa
 b
 ab
+bbba
+aaaa
+ba
+bba

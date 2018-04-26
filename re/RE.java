@@ -32,7 +32,7 @@ public class RE implements REInterface {
 	}
 
 	private NFA buildNFA(NFAState start) {
-		NFAState next = null;
+		NFAState nextState = null;
 		while (more()) {
 			String nextChar = next();
 			if (nextChar.equals("(")) {
@@ -41,42 +41,45 @@ public class RE implements REInterface {
 				}
 				buildNFA(start);
 			} else if (nextChar.equals(")")) {
-
+				ends.push(start);
 			} else if (nextChar.equals("*")) {
-				nfa.addTransition(ends.peek().getName(), 'e', starts.peek().getName());
+				Stack<NFAState> tmp = new Stack<NFAState>();
+				while(!ends.isEmpty()) {
+					nfa.addTransition(ends.pop().getName(), 'e', starts.peek().getName());
+				}
+
 				start = starts.peek();
 			} else if (nextChar.equals("|")) {
 				NFAState prev = new NFAState("" + numStates);
 				numStates++;
 				nfa.addState(prev.getName());
-				nfa.addTransition(prev.getName(), 'e', startState.getName());
+				nfa.addTransition(prev.getName(), 'e', starts.pop().getName());
 
-				next = new NFAState("" + numStates);
-				nfa.addState(next.getName());
-				nfa.addTransition(prev.getName(), 'e', next.getName());
+				nextState = new NFAState("" + numStates);
+				nfa.addState(nextState.getName());
+				nfa.addTransition(prev.getName(), 'e', nextState.getName());
 
 				startState = prev;
 				numStates++;
-				starts.push(next);
-				ends.push(next);
-				start = ends.peek();
+				starts.push(prev);
+				start = nextState;
 			} else {
-				next = new NFAState("" + numStates);
-				nfa.addState(next.getName());
-				nfa.addTransition(start.getName(), nextChar.charAt(0), next.getName());
-				start = next;
+				nextState = new NFAState("" + numStates);
+				nfa.addState(nextState.getName());
+				nfa.addTransition(start.getName(), nextChar.charAt(0), nextState.getName());
+				start = nextState;
 				numStates++;
-				if (more() && peek().equals("*")|peek().equals("|")) {
-					ends.push(next);
+				if (more() && peek().equals("*")|peek().equals("|")|peek().equals(")")) {
+					ends.push(nextState);
 				}
 			}
 			if (!more()) {
 				nfa.addFinalState(start.getName());
 			}
 		}
-		while (!ends.isEmpty()) {
-			nfa.addFinalState(ends.pop().getName());
-		}
+//		while (!ends.isEmpty()) {
+//			nfa.addFinalState(ends.pop().getName());
+//		}
 		nfa.addStartState(startState.getName());
 		return nfa;
 	}
