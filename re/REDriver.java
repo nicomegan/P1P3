@@ -31,7 +31,7 @@ public class REDriver {
 					//the first line is the set of final states
 					//get the string of the final states and split it on a space
 					String regEx = scan.nextLine().trim();
-					REInterface re = new RE(regEx);
+					REInterface re = new RE(regEx);  
 					NFA nfa = re.getNFA();
 					//now process the strings
 					DFA dfa = nfa.getDFA();
