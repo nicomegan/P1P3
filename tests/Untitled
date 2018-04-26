@@ -1,5 +1,4 @@
-a|b|ab
-a
+(a|b)*a
 a
 abbbbbbb
 baaaaaa

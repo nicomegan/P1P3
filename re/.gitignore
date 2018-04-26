@@ -1,3 +1,8 @@
 /REDriver.class
 /REInterface.class
 /RE.class
+/RE$Choice.class
+/RE$Sequence.class
+/RE$Blank.class
+/RE$Repetition.class
+/RE$Primitive.class

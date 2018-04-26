@@ -27,56 +27,73 @@ public class RE implements REInterface {
 		nfa.addState("s");
 		starts.push(start);
 		startState = start;
-		NFA returnnfa = buildNFA(start);
+		nfa.addStartState(start.getName());
+		NFA returnnfa = buildNFA(start, regEx);
 		return returnnfa;
 	}
 
-	private NFA buildNFA(NFAState start) {
-		NFAState next = null;
-		while (more()) {
-			String nextChar = next();
+	private NFA buildNFA(NFAState start, String re) {
+		NFAState nextState = null;
+		Stack trackrest = new Stack();
+		while (re.length() > 0) {
+			String nextChar = re.substring(0,1);
 			if (nextChar.equals("(")) {
+				re = re.substring(1);
 				if (starts.peek() != (start)) {
 					starts.push(start);
 				}
-				buildNFA(start);
+				buildNFA(start, re);
 			} else if (nextChar.equals(")")) {
-
+				re=re.substring(1);
+				start = ends.peek();
 			} else if (nextChar.equals("*")) {
-				nfa.addTransition(ends.peek().getName(), 'e', starts.peek().getName());
+				while (!ends.isEmpty()) {
+					nfa.addTransition(ends.peek().getName(), 'e', starts.peek().getName());
+					re=re.substring(1);
+					buildNFA(ends.pop(), re);
+				}
 				start = starts.peek();
 			} else if (nextChar.equals("|")) {
+				re=re.substring(1);
 				NFAState prev = new NFAState("" + numStates);
 				numStates++;
 				nfa.addState(prev.getName());
 				nfa.addTransition(prev.getName(), 'e', startState.getName());
 
-				next = new NFAState("" + numStates);
-				nfa.addState(next.getName());
-				nfa.addTransition(prev.getName(), 'e', next.getName());
+				nextState = new NFAState("" + numStates);
+				nfa.addState(nextState.getName());
+				nfa.addTransition(prev.getName(), 'e', nextState.getName());
 
 				startState = prev;
 				numStates++;
-				starts.push(next);
-				ends.push(next);
-				start = ends.peek();
+				starts.push(prev);
+				if(!ends.contains(start)){
+					ends.push(start);
+				}
+				start =nextState;
 			} else {
-				next = new NFAState("" + numStates);
-				nfa.addState(next.getName());
-				nfa.addTransition(start.getName(), nextChar.charAt(0), next.getName());
-				start = next;
+				re=re.substring(1);
+				nextState = new NFAState("" + numStates);
+				nfa.addState(nextState.getName());
+				nfa.addTransition(start.getName(), nextChar.charAt(0), nextState.getName());
+				start = nextState;
 				numStates++;
-				if (more() && peek().equals("*")|peek().equals("|")) {
-					ends.push(next);
+				if ((re.length()>0) && re.substring(0,1).equals("*") | re.substring(0,1).equals("|") | re.substring(0,1).equals(")")) {
+					ends.push(nextState);
 				}
 			}
-			if (!more()) {
+			if (re.length() <=0) {
 				nfa.addFinalState(start.getName());
 			}
 		}
-		while (!ends.isEmpty()) {
-			nfa.addFinalState(ends.pop().getName());
-		}
+		Stack<NFAState> tmp = new Stack<NFAState>();
+//		while(!ends.isEmpty()){
+//			tmp.push(ends.pop());
+//		}
+//		while (!tmp.isEmpty()) {
+//			nfa.addFinalState(tmp.peek().getName());
+//			ends.push(tmp.pop());
+//		}
 		nfa.addStartState(startState.getName());
 		return nfa;
 	}
@@ -149,44 +166,44 @@ public class RE implements REInterface {
 	// }
 	// }
 
-	/**
-	 * looks at next char
-	 * 
-	 * @return
-	 */
-	private String peek() {
-		return regEx.substring(0, 1);
-	}
-
-	/**
-	 * remove next char
-	 * 
-	 * @param c
-	 */
-	private void eat(String c) {
-		if (peek().equals(c))
-			this.regEx = this.regEx.substring(1);
-		else
-			throw new RuntimeException("Expected: " + c + "; got: " + peek());
-	}
-
-	/**
-	 * gets and removes next char
-	 * 
-	 * @return
-	 */
-	private String next() {
-		String c = peek();
-		eat(c);
-		return c;
-	}
-
-	/**
-	 * still more stuff check
-	 * 
-	 * @return
-	 */
-	private boolean more() {
-		return regEx.length() > 0;
-	}
+//	/**
+//	 * looks at next char
+//	 * 
+//	 * @return
+//	 */
+//	private String peek() {
+//		return regEx.substring(0, 1);
+//	}
+//
+//	/**
+//	 * remove next char
+//	 * 
+//	 * @param c
+//	 */
+//	private void eat(String c) {
+//		if (peek().equals(c))
+//			this.regEx = this.regEx.substring(1);
+//		else
+//			throw new RuntimeException("Expected: " + c + "; got: " + peek());
+//	}
+//
+//	/**
+//	 * gets and removes next char
+//	 * 
+//	 * @return
+//	 */
+//	private String next() {
+//		String c = peek();
+//		eat(c);
+//		return c;
+//	}
+//
+//	/**
+//	 * still more stuff check
+//	 * 
+//	 * @return
+//	 */
+//	private boolean more() {
+//		return regEx.length() > 0;
+//	}
 }
