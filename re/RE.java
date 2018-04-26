@@ -13,6 +13,7 @@ public class RE implements REInterface {
 	private Stack<NFAState> starts = new Stack<NFAState>();
 	private Stack<NFAState> ends = new Stack<NFAState>();
 	private int numStates = 0;
+	private NFAState startState;
 
 	public RE(String regEx) {
 		nfa = new NFA();
@@ -22,11 +23,11 @@ public class RE implements REInterface {
 	// will do parse
 	@Override
 	public NFA getNFA() {
-		NFAState startState = new NFAState("s");
-		nfa.addStartState("s");
+		NFAState start = new NFAState("s");
 		nfa.addState("s");
-		starts.push(startState);
-		NFA returnnfa = buildNFA(startState);
+		starts.push(start);
+		startState = start;
+		NFA returnnfa = buildNFA(start);
 		return returnnfa;
 	}
 
@@ -35,35 +36,48 @@ public class RE implements REInterface {
 		while (more()) {
 			String nextChar = next();
 			if (nextChar.equals("(")) {
-				if(starts.peek()!=(start)) {
+				if (starts.peek() != (start)) {
 					starts.push(start);
 				}
 				buildNFA(start);
 			} else if (nextChar.equals(")")) {
 
 			} else if (nextChar.equals("*")) {
-				
+				nfa.addTransition(ends.peek().getName(), 'e', starts.peek().getName());
+				start = starts.peek();
 			} else if (nextChar.equals("|")) {
-				next = new NFAState(""+numStates);
-				nfa.addState(""+numStates);
-				nfa.addTransition(start.getName(),'e', next.getName());
+				NFAState prev = new NFAState("" + numStates);
 				numStates++;
-				start=starts.peek();
+				nfa.addState(prev.getName());
+				nfa.addTransition(prev.getName(), 'e', startState.getName());
+
+				next = new NFAState("" + numStates);
+				nfa.addState(next.getName());
+				nfa.addTransition(prev.getName(), 'e', next.getName());
+
+				startState = prev;
+				numStates++;
+				starts.push(next);
 				ends.push(next);
+				start = ends.peek();
 			} else {
-				next = new NFAState(""+numStates);
+				next = new NFAState("" + numStates);
 				nfa.addState(next.getName());
 				nfa.addTransition(start.getName(), nextChar.charAt(0), next.getName());
 				start = next;
 				numStates++;
+				if (more() && peek().equals("*")|peek().equals("|")) {
+					ends.push(next);
+				}
 			}
-			if(!more()) {
+			if (!more()) {
 				nfa.addFinalState(start.getName());
 			}
 		}
 		while (!ends.isEmpty()) {
 			nfa.addFinalState(ends.pop().getName());
 		}
+		nfa.addStartState(startState.getName());
 		return nfa;
 	}
 
