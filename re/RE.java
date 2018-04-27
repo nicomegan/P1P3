@@ -79,6 +79,9 @@ public class RE implements REInterface {
 					while(!starts.isEmpty()) {
 						starts.pop();
 					}
+					while(!ends.isEmpty()) {
+						ends.pop();
+					}
 					starts.push(startState);
 				}
 				ends.push(combine);
@@ -103,7 +106,7 @@ public class RE implements REInterface {
 			}
 		}
 		if (!ends.isEmpty()) {
-//			nfa.addFinalState(ends.pop().getName());
+			nfa.addFinalState(ends.pop().getName());
 
 		}
 		Stack<NFAState> tmp = new Stack<NFAState>();
