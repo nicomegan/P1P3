@@ -32,8 +32,8 @@ public class RE implements REInterface {
 		return returnnfa;
 	}
 
-	int inparenth = 0;
 	private NFA buildNFA(NFAState start, String re) {
+		int inparenth = 0;
 		NFAState nextState = null;
 		while (re.length() > 0) {
 			String nextChar = re.substring(0, 1);
@@ -43,12 +43,14 @@ public class RE implements REInterface {
 				if (starts.peek() != (start)) {
 					starts.push(start);
 				}
-				buildNFA(start, re);
+				continue;
 			} else if (nextChar.equals(")")) {
 				inparenth++;
 				re = re.substring(1);
 				// ends.push(start);
-				start = ends.peek();
+				if (!ends.isEmpty()) {
+					start = ends.peek();
+				}
 			} else if (nextChar.equals("*")) {
 				nextState = ends.pop();
 				nfa.addTransition(nextState.getName(), 'e', starts.peek().getName());
@@ -74,12 +76,12 @@ public class RE implements REInterface {
 					numStates++;
 					starts.push(prev);
 					start = nextState;
-				}else {
-					start=starts.peek();
-					while(!starts.isEmpty()) {
+				} else {
+					start = starts.peek();
+					while (!starts.isEmpty()) {
 						starts.pop();
 					}
-					while(!ends.isEmpty()) {
+					while (!ends.isEmpty()) {
 						ends.pop();
 					}
 					starts.push(startState);
@@ -94,7 +96,7 @@ public class RE implements REInterface {
 				numStates++;
 				if ((re.length() > 0) && re.substring(0, 1).equals("*") | re.substring(0, 1).equals("|")) {
 					ends.push(nextState);
-				} else if (re.length() > 0 && re.substring(0, 1).equals(")")) {
+				} else if (re.length() > 0 && re.substring(0, 1).equals(")") && !ends.isEmpty()) {
 					nfa.addTransition(nextState.getName(), 'e', ends.peek().getName());
 				}
 				if (inparenth == 0 && re.length() > 0 && !re.substring(0, 1).equals("*")) {
@@ -111,117 +113,6 @@ public class RE implements REInterface {
 		}
 		Stack<NFAState> tmp = new Stack<NFAState>();
 		nfa.addStartState(startState.getName());
-		System.out.println(nfa.getStartState()+"\n\n\n");
-
 		return nfa;
 	}
-
-	// /* TODO Decent parser!!!
-	// REgular expression term types
-	// Specifies if loop,mult options,etc??? */
-	//
-	// /**
-	// * gets the next regular expression
-	// *
-	// * @return - term/regular expression
-	// */
-	// private NFA re() {
-	// NFA termNFA = term();
-	// if (more() && peek() == '|') {
-	// eat('|');
-	// NFA regex = re();
-	// return new Choice(termNFA, regex);
-	// } else {
-	// return termNFA;
-	// }
-	// }
-	//
-	// /**
-	// * gets the term/factor
-	// *
-	// * @return - term/factor
-	// */
-	// private NFA term() {
-	// NFA termNFA = RE.blank;
-	// while (more() && peek() != ')' && peek() != '|') {
-	// NFA nextFactor = factor();
-	// termNFA = new Sequence(termNFA, nextFactor);
-	// }
-	//
-	// return termNFA;
-	// }
-	//
-	// /**
-	// * gets the next factor
-	// *
-	// * @return
-	// */
-	// private NFA factor() {
-	// NFA baseNFA = base();
-	//
-	// while (more() && peek() == '*') {
-	// eat('*');
-	// baseNFA = new Repetition(base);
-	// }
-	//
-	// return baseNFA;
-	// }
-	//
-	// /**
-	// * returns a base
-	// * @return - base
-	// */
-	// private NFA base() {
-	// switch (peek()) {
-	// case '(':
-	// eat('(');
-	// NFA r = re();
-	// eat(')');
-	// return r;
-	//
-	// default:
-	// return new Primitive(next());
-	// }
-	// }
-
-	// /**
-	// * looks at next char
-	// *
-	// * @return
-	// */
-	// private String peek() {
-	// return regEx.substring(0, 1);
-	// }
-	//
-	// /**
-	// * remove next char
-	// *
-	// * @param c
-	// */
-	// private void eat(String c) {
-	// if (peek().equals(c))
-	// this.regEx = this.regEx.substring(1);
-	// else
-	// throw new RuntimeException("Expected: " + c + "; got: " + peek());
-	// }
-	//
-	// /**
-	// * gets and removes next char
-	// *
-	// * @return
-	// */
-	// private String next() {
-	// String c = peek();
-	// eat(c);
-	// return c;
-	// }
-	//
-	// /**
-	// * still more stuff check
-	// *
-	// * @return
-	// */
-	// private boolean more() {
-	// return regEx.length() > 0;
-	// }
 }
