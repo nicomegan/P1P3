@@ -32,9 +32,9 @@ public class RE implements REInterface {
 		return returnnfa;
 	}
 
+	int inparenth = 0;
 	private NFA buildNFA(NFAState start, String re) {
 		NFAState nextState = null;
-		int inparenth = 0;
 		while (re.length() > 0) {
 			String nextChar = re.substring(0, 1);
 			if (nextChar.equals("(")) {
@@ -45,9 +45,9 @@ public class RE implements REInterface {
 				}
 				buildNFA(start, re);
 			} else if (nextChar.equals(")")) {
-				inparenth--;
+				inparenth++;
 				re = re.substring(1);
-//				ends.push(start);
+				// ends.push(start);
 				start = ends.peek();
 			} else if (nextChar.equals("*")) {
 				nextState = ends.pop();
@@ -61,20 +61,27 @@ public class RE implements REInterface {
 				numStates++;
 
 				re = re.substring(1);
-				NFAState prev = new NFAState("" + numStates);
-				numStates++;
-				nfa.addState(prev.getName());
-				nfa.addTransition(prev.getName(), 'e', startState.getName());
+				if (inparenth <= 3) {
+					NFAState prev = new NFAState("" + numStates);
+					numStates++;
+					nfa.addState(prev.getName());
+					nfa.addTransition(prev.getName(), 'e', startState.getName());
 
-				nextState = new NFAState("" + numStates);
-				nfa.addState(nextState.getName());
-				nfa.addTransition(prev.getName(), 'e', nextState.getName());
-//				nfa.addTransition(nextState.getName(), 'e', combine.getName());
+					nextState = new NFAState("" + numStates);
+					nfa.addState(nextState.getName());
+					nfa.addTransition(prev.getName(), 'e', nextState.getName());
+					startState = prev;
+					numStates++;
+					starts.push(prev);
+					start = nextState;
+				}else {
+					start=starts.peek();
+					while(!starts.isEmpty()) {
+						starts.pop();
+					}
+					starts.push(startState);
+				}
 				ends.push(combine);
-				startState = prev;
-				numStates++;
-				starts.push(prev);
-				start = nextState;
 			} else {
 				re = re.substring(1);
 				nextState = new NFAState("" + numStates);
@@ -84,10 +91,10 @@ public class RE implements REInterface {
 				numStates++;
 				if ((re.length() > 0) && re.substring(0, 1).equals("*") | re.substring(0, 1).equals("|")) {
 					ends.push(nextState);
-				}else if(re.length()>0 && re.substring(0,1).equals(")")) {
+				} else if (re.length() > 0 && re.substring(0, 1).equals(")")) {
 					nfa.addTransition(nextState.getName(), 'e', ends.peek().getName());
 				}
-				if(inparenth==0 && re.length()>0 && !re.substring(0,1).equals("*")) {
+				if (inparenth == 0 && re.length() > 0 && !re.substring(0, 1).equals("*")) {
 					starts.push(nextState);
 				}
 			}
@@ -95,12 +102,14 @@ public class RE implements REInterface {
 				nfa.addFinalState(start.getName());
 			}
 		}
-		if(!ends.isEmpty()) {
-			nfa.addFinalState(ends.pop().getName());
+		if (!ends.isEmpty()) {
+//			nfa.addFinalState(ends.pop().getName());
 
 		}
 		Stack<NFAState> tmp = new Stack<NFAState>();
 		nfa.addStartState(startState.getName());
+		System.out.println(nfa.getStartState()+"\n\n\n");
+
 		return nfa;
 	}
 
