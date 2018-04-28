@@ -1,10 +1,13 @@
-(a|b)*a
+(aaa|bbb)
+aa
+bb
+aaa
+ab
 a
-abbbbbbb
-baaaaaa
 b
 ab
 bbba
 aaaa
 ba
 bba
+e

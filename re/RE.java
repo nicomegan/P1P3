@@ -1,3 +1,4 @@
+ 
 package re;
 
 import java.util.Stack;
@@ -5,6 +6,11 @@ import java.util.Stack;
 import fa.nfa.NFA;
 import fa.nfa.NFAState;
 
+
+/**
+ * @author Anne Brinegar, Megan Pierce
+ * This class reads in a Regular Expression, and converts it to an NFA
+ */
 public class RE implements REInterface {
 
 	private static NFA blank;
@@ -15,181 +21,114 @@ public class RE implements REInterface {
 	private int numStates = 0;
 	private NFAState startState;
 
+	/**
+	 * Constructor, initializes NFA
+	 * @param regEx
+	 */
 	public RE(String regEx) {
 		nfa = new NFA();
 		this.regEx = regEx;
 	}
 
-	// will do parse
+	/**
+  * Creates NFA
+  **/
 	@Override
 	public NFA getNFA() {
 		NFAState start = new NFAState("s");
 		nfa.addState("s");
 		starts.push(start);
 		startState = start;
-		NFA returnnfa = buildNFA(start);
+		nfa.addStartState(start.getName());
+		NFA returnnfa = buildNFA(start, regEx);
 		return returnnfa;
 	}
 
-	private NFA buildNFA(NFAState start) {
+    /**
+  	 * Parses regular expression to build NFA
+  	 * @param regEx
+  	 */
+	private NFA buildNFA(NFAState start, String re) {
+		int inparenth = 0;
 		NFAState nextState = null;
-		while (more()) {
-			String nextChar = next();
-			if (nextChar.equals("(")) {
-				if (starts.peek() != (start)) {
+		while (re.length() > 0) {
+			String nextChar = re.substring(0, 1);
+			if (nextChar.equals("(")) { // checks for '('
+				inparenth++;
+				re = re.substring(1);
+				if (starts.peek() != (start)) {  // pushes new start state to start stack
 					starts.push(start);
 				}
-				buildNFA(start);
-			} else if (nextChar.equals(")")) {
-				ends.push(start);
-			} else if (nextChar.equals("*")) {
-				Stack<NFAState> tmp = new Stack<NFAState>();
-				while(!ends.isEmpty()) {
-					nfa.addTransition(ends.pop().getName(), 'e', starts.peek().getName());
+				continue;              // loops back to outer loop to check for another '('
+			} else if (nextChar.equals(")")) { // checks for ')'
+				inparenth++;
+				re = re.substring(1);
+				// ends.push(start);
+				if (!ends.isEmpty()) {  //if we have already added an end to list, start is the last place we ended
+					start = ends.peek();
 				}
-
+			} else if (nextChar.equals("*")) { // checks for '*'
+				nextState = ends.pop(); 
+				nfa.addTransition(nextState.getName(), 'e', starts.peek().getName()); // adds empty transition to the last starting point
+				re = re.substring(1);
 				start = starts.peek();
-			} else if (nextChar.equals("|")) {
-				NFAState prev = new NFAState("" + numStates);
+			} else if (nextChar.equals("|")) { // checks for '|'
+				NFAState combine = new NFAState("" + numStates);
+				nfa.addState(combine.getName());
+				nfa.addTransition(nextState.getName(), 'e', combine.getName()); // adds empty transition from previous state to new state, so both arguments between '|' branch from same state
 				numStates++;
-				nfa.addState(prev.getName());
-				nfa.addTransition(prev.getName(), 'e', starts.pop().getName());
 
-				nextState = new NFAState("" + numStates);
-				nfa.addState(nextState.getName());
-				nfa.addTransition(prev.getName(), 'e', nextState.getName());
+				re = re.substring(1);
+				if (inparenth <= 3) { // making sure its more than one set ()
+					NFAState prev = new NFAState("" + numStates);
+					numStates++;
+					nfa.addState(prev.getName());
+					nfa.addTransition(prev.getName(), 'e', startState.getName());
 
-				startState = prev;
-				numStates++;
-				starts.push(prev);
-				start = nextState;
-			} else {
+					nextState = new NFAState("" + numStates);
+					nfa.addState(nextState.getName());
+					nfa.addTransition(prev.getName(), 'e', nextState.getName());
+					startState = prev;
+					numStates++;
+					starts.push(prev);
+					start = nextState;
+				} else {
+					start = starts.peek();
+					while (!starts.isEmpty()) { // empty starts stack after saving top start
+						starts.pop();
+					}
+					while (!ends.isEmpty()) { // empty ends stack
+						ends.pop();
+					}
+					starts.push(startState); // pushes original start state to starts stack
+				}
+				ends.push(combine); // pushes branching state onto ends stack
+			} else { // makes transition to new state on next char in RegEx
+				re = re.substring(1);
 				nextState = new NFAState("" + numStates);
 				nfa.addState(nextState.getName());
 				nfa.addTransition(start.getName(), nextChar.charAt(0), nextState.getName());
 				start = nextState;
 				numStates++;
-				if (more() && peek().equals("*")|peek().equals("|")|peek().equals(")")) {
+				if ((re.length() > 0) && re.substring(0, 1).equals("*") | re.substring(0, 1).equals("|")) { // looks ahead to next character after symbol
 					ends.push(nextState);
+				} else if (re.length() > 0 && re.substring(0, 1).equals(")") && !ends.isEmpty()) {
+					nfa.addTransition(nextState.getName(), 'e', ends.peek().getName());
+				}
+				if (inparenth == 0 && re.length() > 0 && !re.substring(0, 1).equals("*")) {
+					starts.push(nextState);
 				}
 			}
-			if (!more()) {
+			if (re.length() <= 0) { // adds final state when RegEx is done being parsed
 				nfa.addFinalState(start.getName());
 			}
+		} // end while
+		if (!ends.isEmpty()) {
+			nfa.addFinalState(ends.pop().getName());
+
 		}
-//		while (!ends.isEmpty()) {
-//			nfa.addFinalState(ends.pop().getName());
-//		}
+		Stack<NFAState> tmp = new Stack<NFAState>();
 		nfa.addStartState(startState.getName());
 		return nfa;
-	}
-
-	// /* TODO Decent parser!!!
-	// REgular expression term types
-	// Specifies if loop,mult options,etc??? */
-	//
-	// /**
-	// * gets the next regular expression
-	// *
-	// * @return - term/regular expression
-	// */
-	// private NFA re() {
-	// NFA termNFA = term();
-	// if (more() && peek() == '|') {
-	// eat('|');
-	// NFA regex = re();
-	// return new Choice(termNFA, regex);
-	// } else {
-	// return termNFA;
-	// }
-	// }
-	//
-	// /**
-	// * gets the term/factor
-	// *
-	// * @return - term/factor
-	// */
-	// private NFA term() {
-	// NFA termNFA = RE.blank;
-	// while (more() && peek() != ')' && peek() != '|') {
-	// NFA nextFactor = factor();
-	// termNFA = new Sequence(termNFA, nextFactor);
-	// }
-	//
-	// return termNFA;
-	// }
-	//
-	// /**
-	// * gets the next factor
-	// *
-	// * @return
-	// */
-	// private NFA factor() {
-	// NFA baseNFA = base();
-	//
-	// while (more() && peek() == '*') {
-	// eat('*');
-	// baseNFA = new Repetition(base);
-	// }
-	//
-	// return baseNFA;
-	// }
-	//
-	// /**
-	// * returns a base
-	// * @return - base
-	// */
-	// private NFA base() {
-	// switch (peek()) {
-	// case '(':
-	// eat('(');
-	// NFA r = re();
-	// eat(')');
-	// return r;
-	//
-	// default:
-	// return new Primitive(next());
-	// }
-	// }
-
-	/**
-	 * looks at next char
-	 * 
-	 * @return
-	 */
-	private String peek() {
-		return regEx.substring(0, 1);
-	}
-
-	/**
-	 * remove next char
-	 * 
-	 * @param c
-	 */
-	private void eat(String c) {
-		if (peek().equals(c))
-			this.regEx = this.regEx.substring(1);
-		else
-			throw new RuntimeException("Expected: " + c + "; got: " + peek());
-	}
-
-	/**
-	 * gets and removes next char
-	 * 
-	 * @return
-	 */
-	private String next() {
-		String c = peek();
-		eat(c);
-		return c;
-	}
-
-	/**
-	 * still more stuff check
-	 * 
-	 * @return
-	 */
-	private boolean more() {
-		return regEx.length() > 0;
 	}
 }
