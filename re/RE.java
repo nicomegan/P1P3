@@ -57,7 +57,7 @@ public class RE implements REInterface {
 		NFAState previousState = start;
 		int inparenth = 0;
 		NFAState nextState = null;
-		boolean selfLoop = false;
+		boolean selfLoop = false; 
 		while (re.length() > 0) {
 			String nextChar = re.substring(0, 1);
 			if (nextChar.equals("(")) { // checks for '('
@@ -82,8 +82,7 @@ public class RE implements REInterface {
 				if (inparenth == 0 && !selfLoop) {
 					nfa.addTransition(nextState.getName(), 'e', startState.getName());
 					start = startState;
-				}
-				if (selfLoop) {
+				}else if (selfLoop) {
 					nfa.addTransition(nextState.getName(), 'e', previousState.getName()); 
 					start=previousState;
 				} else {
@@ -145,6 +144,7 @@ public class RE implements REInterface {
 				}
 				if (re.length() > 0 && re.substring(0, 1).equals("*")) {
 					selfLoop = true;
+					starts.pop();
 				}
 			}
 			if (re.length() <= 0) { // adds final state when RegEx is done being parsed
